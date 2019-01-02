@@ -86,7 +86,7 @@ Refract::Refract(int argc, char **argv)
   
   // Display ucopyright message.
 
-  ucopyright(_progName);
+//  ucopyright(_progName);
 
   // Get TDRP parameters.
   if (!parmAppInit(_params, argc, argv))
@@ -174,6 +174,7 @@ Refract *Refract::Inst()
 bool Refract::init()
 {
   // Initialize the data trigger
+  printf("triger mode %d\n",_refparms.trigger_mode);
   if (!_refparms.initTrigger(&_dataTrigger))
   {
     return false;
