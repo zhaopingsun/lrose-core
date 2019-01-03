@@ -34,7 +34,7 @@
 
 include $(RAP_MAKE_INC_DIR)/rap_make_macros
 
-TARGET_FILE = Chill2netCDFSweep
+TARGET_FILE = Cinrad2netCDFSweep
 
 LOC_INCLUDES = $(NETCDF4_INCS)
 LOC_CFLAGS =
@@ -47,13 +47,13 @@ LOC_LIBS = \
 HDRS = \
 	Params.hh \
 	Args.hh \
-	Chill2netCDFSweep.hh \
+	Cinrad2netCDFSweep.hh \
 	SweepFile.hh
 
 CPPC_SRCS = \
 	Params.cc \
 	Args.cc \
-	Chill2netCDFSweep.cc \
+	Cinrad2netCDFSweep.cc \
 	Main.cc \
 	SweepFile.cc
 
