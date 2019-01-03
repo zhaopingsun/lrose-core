@@ -34,7 +34,7 @@
  
 /**-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-**/
 /*********************************************************************
- * Main: Chill2netCDFSweep main routine
+ * Main: Cinrad2netCDFSweep main routine
  *
  * RAP, NCAR, Boulder CO
  *
@@ -48,7 +48,7 @@
 
 #include <toolsa/port.h>
 
-#include "Chill2netCDFSweep.hh"
+#include "Cinrad2netCDFSweep.hh"
 
 using namespace std;
 

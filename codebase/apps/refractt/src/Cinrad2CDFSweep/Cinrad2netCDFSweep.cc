@@ -55,7 +55,7 @@
 #include <toolsa/pmu.h>
 #include <toolsa/umisc.h>
 
-#include "Chill2netCDFSweep.hh"
+#include "Cinrad2netCDFSweep.hh"
 #include "SweepFile.hh"
 
 using namespace std;
