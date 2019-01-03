@@ -58,6 +58,7 @@
 #include "Args.hh"
 #include "Params.hh"
 #include "SweepFile.hh"
+#include "rdats.h"
 
 using namespace std;
 
@@ -234,6 +235,8 @@ class Chill2netCDFSweep
   int _beamIndex;
   int _numGatesAlloc;
   int _numBeamsAlloc;
+   TSHeader tshdr;
+   SwpHdrList swplist;
   
 
   /////////////////////

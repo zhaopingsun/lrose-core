@@ -67,7 +67,7 @@ int scanIQFile(const char*fname,TSHeader *tsh,SwpHdrList &swplist)
 
 	while(datalen<totalen)
 	{	
-		printf("scan swp %d,seq %u \n",swpcnt, nexSWFileHead->seqnum);
+//		printf("scan swp %d,seq %u \n",swpcnt, nexSWFileHead->seqnum);
 		swplist.push_back(nexSWFileHead);
 		size_t swpLEN=getSweepLength(nexSWFileHead);	 
 		nexSWFileHead=getNextSwpHeader(nexSWFileHead);
@@ -102,7 +102,7 @@ size_t depackSweeps(TSSweepHeader *swpin,size_t len,TSSweepHeader *swpout)
 		out_swps_len+=getSweepLength(unpackswp);
 		unpackswp=getNextSwpHeader(unpackswp);
 		curlen+=packswplen;
-		printf("unpack swp %d,seq %u \n",swpcnt, packswp->seqnum);
+//		printf("unpack swp %d,seq %u \n",swpcnt, packswp->seqnum);
 		swpcnt++;
 	}
 	return out_swps_len;

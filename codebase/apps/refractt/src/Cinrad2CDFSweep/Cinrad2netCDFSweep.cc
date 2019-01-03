@@ -441,297 +441,6 @@ bool Chill2netCDFSweep::_processBeam(FILE *input_file,
 				     const bool first_beam)
 {
   static const string method_name = "Chill2netCDFSweep::_processFile()";
-  
-  // Read the header
-    
-   header_t header;
-   int bytes_read;
-  
-  if ((bytes_read = fread(&header, 1, sizeof(header), input_file))
-      != sizeof(header))
-  {
-    if (bytes_read == 0)
-    {
-      if (_params->debug)
-	cerr << "Read 0 bytes from file, assuming end of file..." << endl;
-      
-      return false;
-    }
-    
-    cerr << "ERROR: " << method_name << endl;
-    cerr << "Error reading header from input file: " << input_file_path << endl;
-    cerr << "Read " << bytes_read << " bytes from file" << endl;
-    cerr << "Expected " << sizeof(header) << " bytes" << endl;
-    
-    fclose(input_file);
-    return false;
-  }
-  
-  // Calculate the constants needed in the DM calculations
-
-  float zhconst = (float)header.zhconst / 1000.0;
-  float zvconst = (float)header.zvconst / 1000.0;
-  float gate_spacing_km = (float)header.range_inc / 1000000.0;
-  
-  if (_params->debug)
-  {
-    cerr << "Header read:" << endl;
-    cerr << "   id = " << header.id << endl;
-    cerr << "   headlen = " << header.headlen << endl;
-    cerr << "   rtime = " << header.rtime
-	 << " (" << DateTime::str(header.rtime) << ")" << endl;
-    cerr << "   xtime = " << header.xtime << endl;
-    cerr << "   channels_recorded = " << header.channels_recorded << endl;
-    cerr << "   param_recorded = " << header.param_recorded << endl;
-    cerr << "   az_start = " << (header.az_start * ANGLE_TO_DEGREE) << endl;
-    cerr << "   az_end = " << (header.az_end * ANGLE_TO_DEGREE) << endl;
-    cerr << "   el_start = " << (header.el_start * ANGLE_TO_DEGREE) << endl;
-    cerr << "   el_end = " << (header.el_end * ANGLE_TO_DEGREE) << endl;
-    cerr << "   prt = " << header.prt << endl;
-    cerr << "   nyquist_vel = " << header.nyquist_vel << endl;
-    cerr << "   ngates = " << header.ngates << endl;
-    cerr << "   range_start = " << header.range_start << endl;
-    cerr << "   range_inc = " << gate_spacing_km << " km" << endl;
-    cerr << "   pulses = " << header.pulses << endl;
-    cerr << "   zhconst = " << zhconst << " (" << header.zhconst << ")" << endl;
-    cerr << "   zvconst = " << zvconst << " (" << header.zvconst << ")" << endl;
-    cerr << "   rsq100 = " << ((double)header.rsq100/1000.0) << endl;
-  }
-  
-  // Save the information needed from the first beam
-
-  if (first_beam)
-  {
-    _sweepStartTime = header.rtime;
-    _startElevation = header.el_start * ANGLE_TO_DEGREE;
-    _startRangeMm = header.range_start;
-    _gateSpacingMm = header.range_inc;
-    _numGatesInSweep = header.ngates;
-    _samplesPerBeam = header.pulses;
-    _nyquistVelocity = header.nyquist_vel;
-    _prt = header.prt;
-  }
-  else
-  {
-    if (_startRangeMm != header.range_start)
-    {
-      cerr << "ERROR: " << method_name << endl;
-      cerr << "Start range changed mid-sweep" << endl;
-      cerr << "Originally had start range of " << _startRangeMm
-	   << " mm" << endl;
-      cerr << "Changed to " << header.range_start << " mm" << endl;
-      cerr << "Skipping sweep..." << endl;
-      
-      return false;
-    }
-    
-    if (_gateSpacingMm != header.range_inc)
-    {
-      cerr << "ERROR: " << method_name << endl;
-      cerr << "Gate spacing changed mid-sweep" << endl;
-      cerr << "Originally had gate spacing of " << _gateSpacingMm
-	   << " mm" << endl;
-      cerr << "Changed to " << header.range_inc << " mm" << endl;
-      cerr << "Skipping sweep..." << endl;
-      
-      return false;
-    }
-    
-    if (_numGatesInSweep != header.ngates)
-    {
-      cerr << "ERROR: " << method_name << endl;
-      cerr << "Number of gates per beam changed mid-sweep" << endl;
-      cerr << "Originally had " << _numGatesInSweep << " gates" << endl;
-      cerr << "Changed to " << header.ngates << " gates" << endl;
-      cerr << "Skipping sweep..." << endl;
-      
-      return false;
-    }
-    
-    if (_nyquistVelocity != header.nyquist_vel)
-    {
-      cerr << "ERROR: " << method_name << endl;
-      cerr << "Nyquist velocity changed mid-sweep" << endl;
-      cerr << "Originally had nyquist velocity of "
-	   << _nyquistVelocity << endl;
-      cerr << "Changed to " << header.nyquist_vel << endl;
-      cerr << "Skipping sweep..." << endl;
-      
-      return false;
-    }
-    
-    if (_prt != header.prt)
-    {
-      cerr << "ERROR: " << method_name << endl;
-      cerr << "PRT value changed mid-sweep" << endl;
-      cerr << "Originally had PRT value of " << _prt << endl;
-      cerr << "Changed to " << header.prt << endl;
-      cerr << "Skipping sweep..." << endl;
-      
-      return false;
-    }
-    
-  }
-  
-  // Calculate the data dimensions
-
-  int num_fields = _getNumBitsSet(header.param_recorded);
-  int num_channels = _getNumBitsSet(header.channels_recorded);
-
-  if (_params->debug)
-  {
-    cerr << endl;
-    cerr << "   num_fields = " << num_fields << endl;
-    cerr << "   num_channels = " << num_channels << endl;
-    cerr << "   num_gates = " << header.ngates << endl;
-  }
-    
-  size_t data_len = num_fields * num_channels * header.ngates;
-  
-  // Read the data
-
-  short *data = new short[data_len];
-  
-  if ((fread(data, sizeof(short), data_len, input_file)) != data_len)
-  {
-    cerr << "ERROR: " << method_name << endl;
-    cerr << "Error reading data from file: " << input_file_path << endl;
-    
-    fclose(input_file);
-    return false;
-  }
-
-
-
-  // Pull out each of the data fields
-
-  _allocateDataArrays(header.ngates, _beamIndex + 1);
-  
-  short *data_ptr = data;
-  
-  for (int gate = 0; gate < header.ngates; ++gate)
-  {
-    int data_index = (_beamIndex * header.ngates) + gate;
-    float range_km = (float)gate * gate_spacing_km;
-    
-    // Process each of the channels
-
-    if (header.channels_recorded & CHANNEL_H_MASK)
-    {
-      // Process each of the fields in the data
-
-      if (header.param_recorded & PARAM_AVGI_MASK)
-	_hAvgI[data_index] = _calcAvgI(*data_ptr++);
-
-      if (header.param_recorded & PARAM_AVGQ_MASK)
-	_hAvgQ[data_index] = _calcAvgQ(*data_ptr++);
-      
-      if (header.param_recorded & PARAM_DBZ_MASK)
-	_hDbz[data_index] = _calcDbz(*data_ptr++);
-      
-      if (header.param_recorded & PARAM_NCP_MASK)
-	_hNcp[data_index] = _calcNcp(*data_ptr++);
-      
-      if (header.param_recorded & PARAM_VEL_MASK)
-	_hVel[data_index] = _calcVel(*data_ptr++);
-      
-      if (header.param_recorded & PARAM_SW_MASK)
-	_hSw[data_index] = _calcSw(*data_ptr++);
-
-      if (header.param_recorded & PARAM_AVGI_MASK &&
-	  header.param_recorded & PARAM_AVGQ_MASK)
-      {
-	_hNiq[data_index] = _calcNiq(_hAvgI[data_index],
-				     _hAvgQ[data_index]);
-	_hAiq[data_index] = _calcAiq(_hAvgI[data_index],
-				     _hAvgQ[data_index]);
-      }
-      
-      if (header.param_recorded & PARAM_DBZ_MASK)
-      {
-	_hDm[data_index] = _calcDm(_hDbz[data_index], zhconst,
-				   REC_GAIN_H, range_km);
-      }
-
-    } /* endif - header.channels_recorded & CHANNEL_H_MASK */
-    
-    if (header.channels_recorded & CHANNEL_V_MASK)
-    {
-      // Process each of the fields in the data
-
-      if (header.param_recorded & PARAM_AVGI_MASK)
-	_vAvgI[data_index] = _calcAvgI(*data_ptr++);
-
-      if (header.param_recorded & PARAM_AVGQ_MASK)
-	_vAvgQ[data_index] = _calcAvgQ(*data_ptr++);
-      
-      if (header.param_recorded & PARAM_DBZ_MASK)
-	_vDbz[data_index] = _calcDbz(*data_ptr++);
-      
-      if (header.param_recorded & PARAM_NCP_MASK)
-	_vNcp[data_index] = _calcNcp(*data_ptr++);
-      
-      if (header.param_recorded & PARAM_VEL_MASK)
-	_vVel[data_index] = _calcVel(*data_ptr++);
-      
-      if (header.param_recorded & PARAM_SW_MASK)
-	_vSw[data_index] = _calcSw(*data_ptr++);
-
-      if (header.param_recorded & PARAM_AVGI_MASK &&
-	  header.param_recorded & PARAM_AVGQ_MASK)
-      {
-	_vNiq[data_index] = _calcNiq(_vAvgI[data_index],
-				     _vAvgQ[data_index]);
-	_vAiq[data_index] = _calcAiq(_vAvgI[data_index],
-				     _vAvgQ[data_index]);
-      }
-      
-      if (header.param_recorded & PARAM_DBZ_MASK)
-      {
-	_vDm[data_index] = _calcDm(_vDbz[data_index], zvconst,
-				   REC_GAIN_V, range_km);
-      }
-
-    } /* endif - header.channels_recorded & CHANNEL_V_MASK */
-    
-  } /* endfor - gate */
-  
-  delete [] data;
-  
-  // Calculate the azimuth for this beam
-
-  double az_start = header.az_start * ANGLE_TO_DEGREE;
-  double az_end = header.az_end * ANGLE_TO_DEGREE;
-  
-  if (az_end < az_start)
-    az_end += 360.0;
-  
-  _azimuth[_beamIndex] = (az_start + az_end) / 2.0;
-  if (_azimuth[_beamIndex] >= 360.0)
-    _azimuth[_beamIndex] -= 360.0;
-  
-  // Calculate the elevation for this beam
-
-  _elevation[_beamIndex] = ((header.el_start * ANGLE_TO_DEGREE) +
-     (header.el_end * ANGLE_TO_DEGREE)) / 2.0;
-  
-  // Calculate the time offset for the beam
-
-  _timeOffset[_beamIndex] = (double)(header.rtime - _sweepStartTime) +
-    ((double)header.xtime / 40000000.0);
-
-  if (_params->debug)
-  {
-    cerr << "   _beamIndex = " << _beamIndex << endl;
-    cerr << "   calculated az = " << _azimuth[_beamIndex] << endl;
-    cerr << "   calculated el = " << _elevation[_beamIndex] << endl;
-    cerr << "   _sweepStartTime = " << DateTime::str(_sweepStartTime) << endl;
-    cerr << "   rtime = " << DateTime::str(header.rtime) << endl;
-    cerr << "   xtime = " << header.xtime << endl;
-    cerr << "   calculated time_offset = " << _timeOffset[_beamIndex] << endl;
-  }
-  
-  return true;
 }
 
 
@@ -761,57 +470,50 @@ bool Chill2netCDFSweep::_processFile(const string &input_file_path)
 */
   
 // cinrad start
-   TSHeader tshdr;
-   SwpHdrList swplist;
    int ret=scanIQFile(input_file_path.c_str(),&tshdr,swplist);
   // Process the beams in the file
 
-  _initializeDataArrays();
+   TSSweepHeader *swphdr=swplist.front();
   
-  _beamIndex = 0;
-  
-  bool first_beam = true;
-  
- // while (_processBeam(input_file, input_file_path, first_beam))
-  {
-    first_beam = false;
-    _beamIndex++;
-  }
-  
-  // Close the input file
+ // write netcdf file 
+   char ncfpath[256];
+   sprintf(ncfpath,"%s.nc",input_file_path.c_str());
+   Nc3File ncFile(ncfpath, Nc3File::Replace);
+   if(!ncFile.is_valid())
+   {
+	   printf("invlaid\n");
+   }
+   int const  bn=3;//swphdr->binnum;
+   int  const swpn=4;//swplist.size();
+   Nc3Dim *gateDim = ncFile.add_dim("Gates", bn);
+   Nc3Dim *timeDim = ncFile.add_dim("Time", swpn);
+   Nc3Var *iVar = ncFile.add_var("I", nc3Float, gateDim,timeDim);
+   iVar->add_att("units", "I");
+   Nc3Var *qVar = ncFile.add_var("Q", nc3Float, gateDim,timeDim);
+   qVar->add_att("units", "Q");
+   Nc3Var *timeVar = ncFile.add_var("Time", nc3Int, timeDim);
+   long dimSize=swpn*bn;
+   vector<float >fi(dimSize),fq(dimSize);
+   vector<int > swptime(swpn);
+   SwpHdrList::iterator it;
+   int swpidx=0;
+   for(it=swplist.begin();it!=swplist.end()&&swpidx<swpn;it++,swpidx++)
+   {
+	   int offset=swpidx*bn;
+	   for( int b=0;b<bn;b++)
+	   {
+		   fi[offset+b]=(*it)->iq[b][0];
+		   fq[offset+b]=(*it)->iq[b][1];
+	   }
+	   swptime[swpidx]=(*it)->time_sec;
 
-//  fclose(input_file);
-  
-  // Write the output file
+   }
+   int x;
+   //x=iVar->put(&fi[0],bn,swpn,1,1,1);
+    printf("put ret %d\n",x);
+    //x=qVar->put(&fq[0],1,1,1,bn,swpn);
+    x=timeVar->put(&swptime[0],swpn);
+ //  ncFile.close();
 
-  SweepFile sweep_file(_params->output_dir,
-		       _params->radar_info.radar_lat,
-		       _params->radar_info.radar_lon,
-		       _params->radar_info.radar_alt,
-		       _sweepStartTime,
-		       _startElevation,
-		       0,
-		       _sweepNumber,
-		       (double)_startRangeMm / 1000000.0,
-		       (double)_gateSpacingMm / 1000000.0,
-		       _beamIndex,
-		       _numGatesInSweep,
-		       _samplesPerBeam,
-		       _nyquistVelocity,
-		       _params->radar_info.radar_constant,
-		       _params->radar_info.wave_length,
-		       1.0 / (double)_prt,
-		       _params->debug);
-  
-  if (!sweep_file.write(_timeOffset,
-			_azimuth, _elevation,
-			_hAvgI, _hAvgQ,
-			_hDbz, _hVel, _hNcp, _hSw,
-			_hNiq, _hAiq, _hDm,
-			_vAvgI, _vAvgQ,
-			_vDbz, _vVel, _vNcp, _vSw,
-			_vNiq, _vAiq, _vDm))
-    return false;
-  
   return true;
 }
