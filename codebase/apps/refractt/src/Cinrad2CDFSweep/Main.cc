@@ -36,11 +36,11 @@
 /*********************************************************************
  * Main: Cinrad2netCDFSweep main routine
  *
- * RAP, NCAR, Boulder CO
+ * Beijing,China 
  *
- * July 2005
+ * Jan 2019
  *
- * Nancy Rehak
+ * Sun Zhaoping
  *
  *********************************************************************/
 

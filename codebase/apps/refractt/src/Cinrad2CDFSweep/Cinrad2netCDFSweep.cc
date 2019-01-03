@@ -57,6 +57,7 @@
 
 #include "Cinrad2netCDFSweep.hh"
 #include "SweepFile.hh"
+#include "rdats.h"
 
 using namespace std;
 
@@ -443,8 +444,8 @@ bool Chill2netCDFSweep::_processBeam(FILE *input_file,
   
   // Read the header
     
-  header_t header;
-  int bytes_read;
+   header_t header;
+   int bytes_read;
   
   if ((bytes_read = fread(&header, 1, sizeof(header), input_file))
       != sizeof(header))
@@ -600,6 +601,8 @@ bool Chill2netCDFSweep::_processBeam(FILE *input_file,
     return false;
   }
 
+
+
   // Pull out each of the data fields
 
   _allocateDataArrays(header.ngates, _beamIndex + 1);
@@ -745,6 +748,7 @@ bool Chill2netCDFSweep::_processFile(const string &input_file_path)
 
   // Open the input file
 
+/*
   FILE *input_file;
   
   if ((input_file = fopen(input_file_path.c_str(), "r")) == 0)
@@ -754,7 +758,12 @@ bool Chill2netCDFSweep::_processFile(const string &input_file_path)
     
     return false;
   }
+*/
   
+// cinrad start
+   TSHeader tshdr;
+   SwpHdrList swplist;
+   int ret=scanIQFile(input_file_path.c_str(),&tshdr,swplist);
   // Process the beams in the file
 
   _initializeDataArrays();
@@ -763,7 +772,7 @@ bool Chill2netCDFSweep::_processFile(const string &input_file_path)
   
   bool first_beam = true;
   
-  while (_processBeam(input_file, input_file_path, first_beam))
+ // while (_processBeam(input_file, input_file_path, first_beam))
   {
     first_beam = false;
     _beamIndex++;
@@ -771,7 +780,7 @@ bool Chill2netCDFSweep::_processFile(const string &input_file_path)
   
   // Close the input file
 
-  fclose(input_file);
+//  fclose(input_file);
   
   // Write the output file
 

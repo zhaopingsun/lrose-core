@@ -2,6 +2,7 @@
 #include<vector>
 #include <stdio.h>
 #include <string.h>
+#include <tspack.h>
 size_t getSweepLength(TSSweepHeader *swphdr)
 {
 	int chan=swphdr->chan;
@@ -28,30 +29,32 @@ int scanIQFile(const char*fname,TSHeader *tsh,SwpHdrList &swplist)
 	fileCache.resize(IQ_START_POS);
 	fread(&fileCache[0],1,sizeof(TSHeader),fp);
 	char *pbFile=&fileCache[0];
-	TSHeader *IQFileHead=(TSHeader *)pbFile; 
+	memcpy(tsh,pbFile,sizeof(*tsh));
 
 	fseek(fp,0,SEEK_END);
     	int fileLength=ftell(fp);
-
-	if(IQFileHead->version>=TS_VER_IQ16)
+	
+	rewind(fp);
+	if(tsh->version>=TS_VER_IQ16)
 	{
 		vector<char> tmpCache;
 		tmpCache.resize(fileLength);
-		fread(&tmpCache[0],1,fileLength,fp);
+		fileCache.resize(2*fileLength);
+		int len=fread(&tmpCache[0],1,fileLength,fp);
 		
-		fileLength=;
+		fileLength= depackSweeps((TSSweepHeader*)&tmpCache[IQ_START_POS],fileLength-IQ_START_POS,(TSSweepHeader*)&fileCache[IQ_START_POS]);
 		//decode sweep here
 		
 	}
 	else
 	{
-		rewind(fp);
+		fileCache.resize(fileLength);
 		fread(&fileCache[0],1,fileLength,fp);
-		memcpy(tsh,IQFileHead,sizeof(*tsh));
 
 	}
+	fclose(fp);
 
-
+	pbFile=&fileCache[0];
 	TSSweepHeader *SWFileHead =(TSSweepHeader*)(pbFile+IQ_START_POS);
 	TSSweepHeader *nexSWFileHead;
 	nexSWFileHead=SWFileHead;
@@ -60,13 +63,16 @@ int scanIQFile(const char*fname,TSHeader *tsh,SwpHdrList &swplist)
 	 
 	size_t datalen;
 	datalen=IQ_START_POS;
+	int swpcnt;
 
 	while(datalen<totalen)
 	{	
+		printf("scan swp %d,seq %u \n",swpcnt, nexSWFileHead->seqnum);
 		swplist.push_back(nexSWFileHead);
 		size_t swpLEN=getSweepLength(nexSWFileHead);	 
 		nexSWFileHead=getNextSwpHeader(nexSWFileHead);
 		datalen=datalen+swpLEN;	
+		swpcnt++;
 	}
 	return 1;
 }
@@ -75,6 +81,7 @@ size_t depackSweeps(TSSweepHeader *swpin,size_t len,TSSweepHeader *swpout)
 	size_t curlen=0;	
 	size_t out_swps_len=0;
 	TSSweepHeader *packswp=swpin,*unpackswp=swpout;
+	int swpcnt=0;
 	while(curlen<len)
 	{
 		size_t packiq_count=(packswp->binnum*packswp->chan+packswp->burstbinnum)*2;
@@ -95,6 +102,8 @@ size_t depackSweeps(TSSweepHeader *swpin,size_t len,TSSweepHeader *swpout)
 		out_swps_len+=getSweepLength(unpackswp);
 		unpackswp=getNextSwpHeader(unpackswp);
 		curlen+=packswplen;
+		printf("unpack swp %d,seq %u \n",swpcnt, packswp->seqnum);
+		swpcnt++;
 	}
 	return out_swps_len;
 }

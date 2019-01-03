@@ -55,6 +55,8 @@ CPPC_SRCS = \
 	Args.cc \
 	Cinrad2netCDFSweep.cc \
 	Main.cc \
+	rdats.cpp \
+	tspack.cpp \
 	SweepFile.cc
 
 #

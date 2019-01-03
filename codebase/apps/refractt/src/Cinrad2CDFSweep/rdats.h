@@ -3,7 +3,7 @@
 #include <sys/time.h>
 #include <list>
 //#include "ctrlword.h"
-#include "genericBasedata.h"
+//#include "genericBasedata.h"
 int const SITE_NAME_LEN=16;
 using namespace std;
 enum  RadailState{CUT_START,CUT_MID,CUT_END,VOL_START,VOL_END,
@@ -62,7 +62,8 @@ int const TS_SWP_HEADER_SIZE=128;
 int const TS_SWP_HEADER_SIZE_INT=TS_SWP_HEADER_SIZE/4;
 struct TSSweepHeader{
 	size_t IQLength();
-	struct timeval time;// time of data,
+	int  time_sec;// time of data,
+	int time_usec;
 	unsigned int clock ;// clock tagged by Card
 	unsigned int seqnum;// squence number  of this sweep
 	int spared[3];// height of the radar in meter 
