@@ -6,6 +6,8 @@
 #include "genericBasedata.h"
 int const SITE_NAME_LEN=16;
 using namespace std;
+enum  RadailState{CUT_START,CUT_MID,CUT_END,VOL_START,VOL_END,
+	RHI_START, RHI_END, CUT_INIT,FORCE_END};
 #pragma pack(1)
 /**
    Time Series Data(IQ) format 
