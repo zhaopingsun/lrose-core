@@ -483,18 +483,25 @@ bool Chill2netCDFSweep::_processFile(const string &input_file_path)
    {
 	   printf("invlaid\n");
    }
-   int const  bn=3;//swphdr->binnum;
-   int  const swpn=4;//swplist.size();
+   int const  bn=400;//swphdr->binnum;
+   int  const swpn=swplist.size();
    Nc3Dim *gateDim = ncFile.add_dim("Gates", bn);
    Nc3Dim *timeDim = ncFile.add_dim("Time", swpn);
-   Nc3Var *iVar = ncFile.add_var("I", nc3Float, gateDim,timeDim);
+   const Nc3Dim * dataDims2[]={gateDim,timeDim};
+   Nc3Var *iVar = ncFile.add_var("I", nc3Float, 2,dataDims2);
    iVar->add_att("units", "I");
-   Nc3Var *qVar = ncFile.add_var("Q", nc3Float, gateDim,timeDim);
+   Nc3Var *qVar = ncFile.add_var("Q", nc3Float, 2,dataDims2);
    qVar->add_att("units", "Q");
    Nc3Var *timeVar = ncFile.add_var("Time", nc3Int, timeDim);
-   long dimSize=swpn*bn;
-   vector<float >fi(dimSize),fq(dimSize);
-   vector<int > swptime(swpn);
+   Nc3Var *azVar = ncFile.add_var("Azimuth", nc3Float, timeDim);
+   Nc3Var *elVar = ncFile.add_var("Elevation", nc3Float, timeDim);
+   Nc3Var *prtVar = ncFile.add_var("Prt", nc3Int, timeDim);
+   Nc3Var *unixtimeVar = ncFile.add_var("UnixTime", nc3Int, timeDim);
+   Nc3Var *nanotimeVar = ncFile.add_var("NanoSeconds", nc3Int, timeDim);
+   long const dimSize=swpn*bn;
+   vector<float >fi(dimSize),fq(dimSize),az(swpn),el(swpn);	
+//   float  fi[dimSize],fq[dimSize];
+   vector<int > swptime(swpn),nanotime(swpn),prt(swpn);
    SwpHdrList::iterator it;
    int swpidx=0;
    for(it=swplist.begin();it!=swplist.end()&&swpidx<swpn;it++,swpidx++)
@@ -506,13 +513,23 @@ bool Chill2netCDFSweep::_processFile(const string &input_file_path)
 		   fq[offset+b]=(*it)->iq[b][1];
 	   }
 	   swptime[swpidx]=(*it)->time_sec;
+	   nanotime[swpidx]=(*it)->time_usec;
+	  az[swpidx]=TSDecodeAngle((*it)->az);
+	  el[swpidx]=TSDecodeAngle((*it)->el);
+	  prt[swpidx]=1e6/(*it)->prf;
 
    }
    int x;
-   //x=iVar->put(&fi[0],bn,swpn,1,1,1);
-    printf("put ret %d\n",x);
-    //x=qVar->put(&fq[0],1,1,1,bn,swpn);
     x=timeVar->put(&swptime[0],swpn);
+   //x=iVar->put(&fi[0],bn,swpn,1,1,1);
+    x=qVar->put(&fq[0],bn,swpn);
+    x=iVar->put(&fi[0],bn,swpn);
+    azVar->put(&az[0],swpn);
+    elVar->put(&el[0],swpn);
+    prtVar->put(&prt[0],swpn);
+    unixtimeVar->put(&swptime[0],swpn);
+    nanotimeVar->put(&nanotime[0],swpn);
+
  //  ncFile.close();
 
   return true;

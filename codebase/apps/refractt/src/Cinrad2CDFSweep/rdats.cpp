@@ -107,3 +107,7 @@ size_t depackSweeps(TSSweepHeader *swpin,size_t len,TSSweepHeader *swpout)
 	}
 	return out_swps_len;
 }
+float TSDecodeAngle(unsigned short a)
+{
+	return a*1.0/TS_ANGLE_SCALE;
+}
