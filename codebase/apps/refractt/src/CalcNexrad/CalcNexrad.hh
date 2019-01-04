@@ -126,6 +126,7 @@ class CalcNexrad
 
   static const string TIME_DIM_NAME;
   static const string GATES_DIM_NAME;
+  static  string site;
 
   // Names of the variable fields in the netCDF file.
 
@@ -142,8 +143,8 @@ class CalcNexrad
 
   // Constant radar values
 
-  static const double RADAR_LAT;
-  static const double RADAR_LON;
+  static double RADAR_LAT;
+  static double RADAR_LON;
   static const double RADAR_ALT;
 
   static const int NUM_AZIMUTHS;
@@ -153,6 +154,7 @@ class CalcNexrad
   static const double POWER_CONSTANT;
   static const double START_RANGE;
   static const double GATE_SPACING;
+   
 
 
   /////////////////////

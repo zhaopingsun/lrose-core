@@ -67,6 +67,7 @@ const float SweepFile::MISSING_DATA_VALUE = -32768.0;
  */
 
 SweepFile::SweepFile(const string &output_dir,
+		     const string &site,
 		     const double radar_lat,    /* deg */
 		     const double radar_lon,    /* deg */
 		     const double radar_alt,    /* km */
@@ -115,8 +116,8 @@ SweepFile::SweepFile(const string &output_dir,
   DateTime stime(sweep_start_time);
   char path[MAX_PATH_LEN];
   sprintf(path,
-	  "%s/ncswp_KFTG_%.4d%.2d%.2d_%.2d%.2d%.2d.000_v%.3d_s%.2d_%.1f_SUR_.nc",
-	  _outputDir.c_str(),
+	  "%s/ncswp_%s_%.4d%.2d%.2d_%.2d%.2d%.2d.000_v%.3d_s%.2d_%.1f_SUR_.nc",
+	  _outputDir.c_str(),site.c_str(),
 	  stime.getYear(), stime.getMonth(), stime.getDay(),
 	  stime.getHour(), stime.getMin(), stime.getSec(),
 	  _volNum, _tiltNum, elev0);

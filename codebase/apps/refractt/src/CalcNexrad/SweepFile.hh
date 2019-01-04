@@ -67,6 +67,7 @@ public:
    */
 
   SweepFile(const string &output_dir,
+	    const string &site,
 	    const double radar_lat,    /* deg */
 	    const double radar_lon,    /* deg */
 	    const double radar_alt,    /* km */

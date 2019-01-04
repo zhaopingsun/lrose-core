@@ -68,6 +68,7 @@ using namespace std;
 const string CalcNexrad::TIME_DIM_NAME = "Time";
 const string CalcNexrad::GATES_DIM_NAME = "Gates";
 
+ string CalcNexrad::site = "KFTG";
 const string CalcNexrad::I_VAR_NAME = "I";
 const string CalcNexrad::Q_VAR_NAME = "Q";
 const string CalcNexrad::SAMPLE_NUM_VAR_NAME = "SampleNum";
@@ -79,8 +80,8 @@ const string CalcNexrad::UNIX_TIME_VAR_NAME = "UnixTime";
 const string CalcNexrad::NANO_SEC_VAR_NAME = "NanoSeconds";
 const string CalcNexrad::FLAGS_VAR_NAME = "Flags";
 
-const double CalcNexrad::RADAR_LAT = 39.7867;
-const double CalcNexrad::RADAR_LON = -104.5458;
+double CalcNexrad::RADAR_LAT = 39.7867;
+double CalcNexrad::RADAR_LON = -104.5458;
 const double CalcNexrad::RADAR_ALT = 1.7102;
 
 const int CalcNexrad::NUM_AZIMUTHS = 360;
@@ -494,7 +495,21 @@ bool CalcNexrad::_processFile(const string &input_file_path)
     input_file.close();
     return false;
   }
-
+  Nc3Att* nat=input_file.get_att("latitude") ; 
+  RADAR_LAT=nat->values()->as_float(0);
+  nat=input_file.get_att("longitude");
+  RADAR_LON=nat->values()->as_float(0);
+  nat=input_file.get_att("site");
+  Nc3Values *values=nat->values();
+  int len=nat->num_vals();
+  char buf[32];
+  memset(buf,0,sizeof(buf));
+  for(int i=0;i<len;i++)
+  {
+	  buf[i]=values->as_char(i);
+  }
+  site=string(buf);
+  
   if (time_dim->size() <= 0 || gates_dim->size() <= 0)
   {
     cerr << "ERROR: " << method_name << endl;
@@ -1016,7 +1031,7 @@ bool CalcNexrad::_writeSweepFile()
     }
   } /* endif - _params->debug */
   
-  SweepFile sweep_file(_args->getOutputDir(),
+  SweepFile sweep_file(_args->getOutputDir(), site,
 		       RADAR_LAT, RADAR_LON, RADAR_ALT,
 		       _sweepStartTime, _elevation[0],
 		       0, 0,
